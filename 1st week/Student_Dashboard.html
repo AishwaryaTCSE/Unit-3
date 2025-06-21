@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Dashboard</title>
+  <style>
+    body { font-family: Arial; background: #f0f0f0; color: #333; transition: background 0.3s, color 0.3s; }
+    .dark { background: #333; color: #fff; }
+    .container { max-width: 800px; margin: auto; padding: 20px; }
+    input, select, button { padding: 8px; margin: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    .actions button { margin: 0 2px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Student Dashboard</h1>
+
+    <div>
+      <input id="name" placeholder="Name" />
+      <input id="age" type="number" placeholder="Age" />
+      <select id="grade">
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+      </select>
+      <label><input type="checkbox" id="enrolled" /> Enrolled</label>
+      <button onclick="addStudent()">Add Student</button>
+    </div>
+
+    <div>
+      <input id="search" placeholder="Search by Name" oninput="renderStudents()" />
+      <select id="gradeFilter" onchange="renderStudents()">
+        <option value="">All Grades</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+      </select>
+      <select id="enrolledFilter" onchange="renderStudents()">
+        <option value="">All Enrollments</option>
+        <option value="true">Enrolled</option>
+        <option value="false">Not Enrolled</option>
+      </select>
+
+      <select id="sortBy" onchange="renderStudents()">
+        <option value="name-asc">Name A-Z</option>
+        <option value="age-asc">Age Asc</option>
+        <option value="age-desc">Age Desc</option>
+      </select>
+
+      <button onclick="toggleTheme()">Toggle Theme</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th><th>Age</th><th>Grade</th><th>Enrolled</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="studentTable"></tbody>
+    </table>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script>
+    // 1. Firebase Config
+   const firebaseConfig = {
+  apiKey: "AIzaSyAi6dh3eSyKazYlniJjxVvI5TT7haiJdII",
+  authDomain: "masai-studentmanager.firebaseapp.com",
+  databaseURL: "https://masai-studentmanager-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "masai-studentmanager",
+  storageBucket: "masai-studentmanager.firebasestorage.app",
+  messagingSenderId: "678510014163",
+  appId: "1:678510014163:web:7868a54e3046f85a6aee26",
+  measurementId: "G-LL5TWC15QV"
+};
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database().ref("students");
+
+    // 2. Add Student
+    function addStudent() {
+      const name = document.getElementById("name").value.trim();
+      const age = parseInt(document.getElementById("age").value);
+      const grade = document.getElementById("grade").value;
+      const enrolled = document.getElementById("enrolled").checked;
+
+      if (!name || !age) return alert("Please fill all fields");
+
+      const id = db.push().key;
+      db.child(id).set({ name, age, grade, enrolled });
+      clearForm();
+    }
+
+    function clearForm() {
+      document.getElementById("name").value = "";
+      document.getElementById("age").value = "";
+      document.getElementById("enrolled").checked = false;
+    }
+
+    // 3. Render Students
+    function renderStudents() {
+      db.once("value", snapshot => {
+        let students = [];
+        snapshot.forEach(child => {
+          students.push({ id: child.key, ...child.val() });
+        });
+
+        // Apply Filters
+        const search = document.getElementById("search").value.toLowerCase();
+        const gradeFilter = document.getElementById("gradeFilter").value;
+        const enrolledFilter = document.getElementById("enrolledFilter").value;
+        const sortBy = document.getElementById("sortBy").value;
+
+        students = students.filter(s => 
+          s.name.toLowerCase().includes(search) &&
+          (gradeFilter === "" || s.grade === gradeFilter) &&
+          (enrolledFilter === "" || s.enrolled.toString() === enrolledFilter)
+        );
+
+        // Sort
+        if (sortBy === "name-asc") students.sort((a, b) => a.name.localeCompare(b.name));
+        if (sortBy === "age-asc") students.sort((a, b) => a.age - b.age);
+        if (sortBy === "age-desc") students.sort((a, b) => b.age - a.age);
+
+        // Persist filter/sort
+        localStorage.setItem("filters", JSON.stringify({ gradeFilter, enrolledFilter, sortBy, search }));
+
+        // Render Table
+        const tbody = document.getElementById("studentTable");
+        tbody.innerHTML = "";
+        students.forEach(s => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${s.name}</td>
+              <td>${s.age}</td>
+              <td>${s.grade}</td>
+              <td>${s.enrolled ? "Yes" : "No"}</td>
+              <td class="actions">
+                <button onclick="editStudent('${s.id}', '${s.name}', ${s.age}, '${s.grade}', ${s.enrolled})">Edit</button>
+                <button onclick="deleteStudent('${s.id}')">Delete</button>
+              </td>
+            </tr>
+          `;
+        });
+      });
+    }
+
+    function deleteStudent(id) {
+      if (confirm("Delete this student?")) db.child(id).remove();
+    }
+
+    function editStudent(id, name, age, grade, enrolled) {
+      document.getElementById("name").value = name;
+      document.getElementById("age").value = age;
+      document.getElementById("grade").value = grade;
+      document.getElementById("enrolled").checked = enrolled;
+
+      deleteStudent(id);
+    }
+
+    // 4. Theme Toggle
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+      localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+    }
+
+    // 5. Load Filters from localStorage
+    window.onload = () => {
+      const filters = JSON.parse(localStorage.getItem("filters")) || {};
+      document.getElementById("gradeFilter").value = filters.gradeFilter || "";
+      document.getElementById("enrolledFilter").value = filters.enrolledFilter || "";
+      document.getElementById("sortBy").value = filters.sortBy || "name-asc";
+      document.getElementById("search").value = filters.search || "";
+
+      const theme = localStorage.getItem("theme");
+      if (theme === "dark") document.body.classList.add("dark");
+
+      renderStudents();
+      db.on("value", renderStudents);
+    };
+  </script>
+</body>
+</html>
