@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DOM Traversal: Parent and Sibling Navigation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    ul {
+      list-style-type: none;
+    }
+    li {
+      padding: 10px;
+      background-color: #f0f0f0;
+      margin: 5px 0;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    li:hover {
+      background-color: #dcdcdc;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>DOM Traversal Task</h1>
+
+  <div id="container">
+    <ul id="list">
+      <li id="item1">Item 1</li>
+      <li id="item2">Item 2</li>
+      <li id="item3">Item 3</li>
+    </ul>
+  </div>
+
+  <script>
+
+    const item2 = document.getElementById('item2');
+
+    item2.addEventListener('click', function () {
+    const parentUl = item2.parentNode;
+
+      alert("Parent Node Text Content: " + parentUl.textContent.trim());
+
+      const previousSibling = item2.previousElementSibling;
+      console.log("Previous Sibling Text: " + previousSibling.textContent);
+      const nextSibling = item2.nextElementSibling;
+      console.log("Next Sibling Text: " + nextSibling.textContent);
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Save and Load User Notes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f0f8ff;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #saveBtn { background-color: #4CAF50; color: white; }
+        #loadBtn { background-color: #2196F3; color: white; }
+        #clearBtn { background-color: #f44336; color: white; }
+    </style>
+</head>
+<body>
+
+    <h1>Save and Load User Notes</h1>
+
+    <!-- Text area for user input -->
+    <textarea id="notesArea" placeholder="Write your notes here..."></textarea><br>
+
+    <!-- Buttons -->
+    <button id="saveBtn">Save Notes</button>
+    <button id="loadBtn">Load Notes</button>
+    <button id="clearBtn">Clear Notes</button>
+
+    <script>
+        // When the page loads, automatically load notes from localStorage
+        window.onload = function() {
+            const savedNotes = localStorage.getItem('userNotes');
+            if (savedNotes) {
+                document.getElementById('notesArea').value = savedNotes;
+            }
+        }
+
+        // Save button functionality
+        document.getElementById('saveBtn').addEventListener('click', function() {
+            const notes = document.getElementById('notesArea').value.trim();
+
+            // Validation to prevent saving empty notes
+            if (notes === "") {
+                alert("Cannot save empty notes!");
+                return;
+            }
+
+            localStorage.setItem('userNotes', notes);
+            alert("Notes saved successfully!");
+        });
+
+        // Load button functionality
+        document.getElementById('loadBtn').addEventListener('click', function() {
+            const savedNotes = localStorage.getItem('userNotes');
+            if (savedNotes) {
+                document.getElementById('notesArea').value = savedNotes;
+                alert("Notes loaded successfully!");
+            } else {
+                alert("No notes found to load.");
+            }
+        });
+
+        // Clear button functionality
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            localStorage.removeItem('userNotes');
+            document.getElementById('notesArea').value = "";
+            alert("Notes cleared successfully!");
+        });
+    </script>
+
+</body>
+</html>

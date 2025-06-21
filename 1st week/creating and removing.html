@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Paragraph Creator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    #container {
+      margin-top: 20px;
+    }
+    p {
+      background-color: #f0f0f0;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Paragraph Manager</h1>
+
+  <!-- Button to add a new paragraph -->
+  <button id="addBtn">Add Paragraph</button>
+
+  <!-- Button to remove the last added paragraph -->
+  <button id="removeBtn">Remove Last Paragraph</button>
+
+  <!-- Div to contain the paragraphs -->
+  <div id="container"></div>
+
+  <script>
+    // Get references to DOM elements
+    const addBtn = document.getElementById('addBtn');
+    const removeBtn = document.getElementById('removeBtn');
+    const container = document.getElementById('container');
+
+    // Add Paragraph Button Click Handler
+    addBtn.addEventListener('click', function () {
+      // Create a new <p> element
+      const newPara = document.createElement('p');
+
+      // Set its text content
+      newPara.textContent = 'This is a new paragraph.';
+
+      // Append the paragraph to the container
+      container.appendChild(newPara); // ✅ using appendChild as required
+    });
+
+    // Remove Last Paragraph Button Click Handler
+    removeBtn.addEventListener('click', function () {
+      // Get the list of all <p> elements in the container
+      const allParas = container.getElementsByTagName('p');
+
+      // Check if there are any paragraphs to remove
+      if (allParas.length > 0) {
+        // Remove the last paragraph
+        container.removeChild(allParas[allParas.length - 1]); // ✅ using removeChild as required
+      }
+    });
+  </script>
+
+</body>
+</html>

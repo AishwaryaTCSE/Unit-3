@@ -1,0 +1,88 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dynamic Theme Selector</title>
+    <style id="theme-style">
+        body {
+            background-color: white;
+            color: black;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        select {
+            font-size: 16px;
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Dynamic Theme Selector Using sessionStorage</h1>
+
+    <!-- Dropdown for theme selection -->
+    <label for="themeSelect">Choose Theme: </label>
+    <select id="themeSelect">
+        <option value="Light">Light</option>
+        <option value="Dark">Dark</option>
+        <option value="Blue">Blue</option>
+    </select>
+
+    <script>
+        // Function to apply theme based on selection
+        function applyTheme(theme) {
+            const styleTag = document.getElementById('theme-style');
+            if (theme === "Light") {
+                styleTag.innerHTML = `
+                    body {
+                        background-color: white;
+                        color: black;
+                        font-family: Arial, sans-serif;
+                        padding: 20px;
+                        transition: all 0.3s;
+                    }
+                `;
+            } else if (theme === "Dark") {
+                styleTag.innerHTML = `
+                    body {
+                        background-color: #121212;
+                        color: white;
+                        font-family: Arial, sans-serif;
+                        padding: 20px;
+                        transition: all 0.3s;
+                    }
+                `;
+            } else if (theme === "Blue") {
+                styleTag.innerHTML = `
+                    body {
+                        background-color: #001f3f;
+                        color: white;
+                        font-family: Arial, sans-serif;
+                        padding: 20px;
+                        transition: all 0.3s;
+                    }
+                `;
+            }
+        }
+
+        // On page load: check sessionStorage and apply stored theme
+        window.onload = function() {
+            const storedTheme = sessionStorage.getItem('selectedTheme');
+            if (storedTheme) {
+                document.getElementById('themeSelect').value = storedTheme;
+                applyTheme(storedTheme);
+            }
+        }
+
+        // When user changes the theme from dropdown
+        document.getElementById('themeSelect').addEventListener('change', function() {
+            const selectedTheme = this.value;
+            applyTheme(selectedTheme);
+            sessionStorage.setItem('selectedTheme', selectedTheme);
+        });
+    </script>
+
+</body>
+</html>

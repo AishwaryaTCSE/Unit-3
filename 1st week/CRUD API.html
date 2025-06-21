@@ -1,0 +1,111 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MockAPI CRUD App</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        input, button { padding: 10px; margin: 5px; }
+        table { border-collapse: collapse; width: 60%; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<h2>MockAPI CRUD App</h2>
+
+<form id="studentForm">
+    <input type="hidden" id="studentId">
+    <input type="text" id="name" placeholder="Name" required>
+    <input type="number" id="age" placeholder="Age" required>
+    <input type="text" id="course" placeholder="Course" required>
+    <button type="submit">Save</button>
+</form>
+
+<h3>Student List</h3>
+<table id="studentTable">
+    <tr><th>Name</th><th>Age</th><th>Course</th><th>Actions</th></tr>
+</table>
+
+<script>
+  const BASE_URL = 'https://6829a2c86075e87073a708bd.mockapi.io/students';
+
+  const studentForm = document.getElementById("studentForm");
+  const studentTable = document.getElementById("studentTable");
+
+  studentForm.addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const studentId = document.getElementById("studentId").value;
+    const name = document.getElementById("name").value;
+    const age = document.getElementById("age").value;
+    const course = document.getElementById("course").value;
+
+    const studentData = { name, age, course };
+
+    if (studentId) {
+      updateStudent(studentId, studentData);
+    } else {
+      createStudent(studentData);
+    }
+
+    studentForm.reset();
+    document.getElementById("studentId").value = "";
+  });
+
+  function createStudent(data) {
+    fetch(BASE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(() => fetchStudents());
+  }
+
+  function fetchStudents() {
+    fetch(BASE_URL)
+      .then(res => res.json())
+      .then(data => {
+        studentTable.innerHTML = `<tr><th>Name</th><th>Age</th><th>Course</th><th>Actions</th></tr>`;
+        data.forEach(student => {
+          studentTable.innerHTML += `
+            <tr>
+              <td>${student.name}</td>
+              <td>${student.age}</td>
+              <td>${student.course}</td>
+              <td>
+                <button onclick="editStudent('${student.id}', '${student.name}', '${student.age}', '${student.course}')">Edit</button>
+                <button onclick="deleteStudent('${student.id}')">Delete</button>
+              </td>
+            </tr>`;
+        });
+      });
+  }
+
+  function updateStudent(id, data) {
+    fetch(`${BASE_URL}/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(() => fetchStudents());
+  }
+
+  function deleteStudent(id) {
+    fetch(`${BASE_URL}/${id}`, {
+      method: 'DELETE'
+    }).then(() => fetchStudents());
+  }
+
+  function editStudent(id, name, age, course) {
+    document.getElementById("studentId").value = id;
+    document.getElementById("name").value = name;
+    document.getElementById("age").value = age;
+    document.getElementById("course").value = course;
+  }
+
+  // Initial fetch
+  fetchStudents();
+</script>
+
+</body>
+</html>

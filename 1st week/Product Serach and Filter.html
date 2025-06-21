@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Product Search & Filter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background: #f8f9fa;
+    }
+    h1 {
+      text-align: center;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 10px;
+    }
+    input, select {
+      padding: 10px;
+      font-size: 1rem;
+    }
+    #product-count {
+      margin: 10px 0;
+      font-weight: bold;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    .card img {
+      max-width: 100%;
+      height: 150px;
+      object-fit: contain;
+    }
+    .card h3 {
+      font-size: 1rem;
+      margin: 10px 0;
+    }
+    .card p {
+      font-weight: bold;
+      color: #28a745;
+    }
+  </style>
+</head>
+<body>
+  <h1>Product Search & Filter</h1>
+
+  <div class="controls">
+    <input type="text" id="searchInput" placeholder="Search by title..." />
+    <select id="categoryFilter">
+      <option value="all">All Categories</option>
+    </select>
+    <select id="priceSort">
+      <option value="default">Sort by Price</option>
+      <option value="asc">Low to High</option>
+      <option value="desc">High to Low</option>
+    </select>
+  </div>
+
+  <div id="product-count">Loading products...</div>
+  <div class="grid" id="productGrid"></div>
+
+  <script>
+    const API_URL = 'https://fakestoreapi.com/products';
+    const CATEGORY_URL = 'https://fakestoreapi.com/products/categories';
+
+    const searchInput = document.getElementById('searchInput');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const priceSort = document.getElementById('priceSort');
+    const productGrid = document.getElementById('productGrid');
+    const productCount = document.getElementById('product-count');
+
+    let allProducts = [];
+
+    async function fetchProducts() {
+      try {
+        const res = await fetch(API_URL);
+        allProducts = await res.json();
+        displayProducts(allProducts);
+      } catch (error) {
+        productGrid.innerHTML = '<p style="color:red;">Failed to fetch products.</p>';
+      }
+    }
+
+    async function fetchCategories() {
+      try {
+        const res = await fetch(CATEGORY_URL);
+        const categories = await res.json();
+        categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat;
+          option.textContent = cat;
+          categoryFilter.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Category fetch error:', error);
+      }
+    }
+
+    function displayProducts(products) {
+      productGrid.innerHTML = '';
+      productCount.textContent = `Showing ${products.length} products`;
+
+      products.forEach(prod => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        card.innerHTML = `
+          <img src="${prod.image}" alt="${prod.title}" />
+          <h3>${prod.title}</h3>
+          <p>₹${prod.price}</p>
+        `;
+        productGrid.appendChild(card);
+      });
+    }
+
+    function filterAndDisplay() {
+      const searchTerm = searchInput.value.toLowerCase();
+      const selectedCategory = categoryFilter.value;
+      const sortOption = priceSort.value;
+
+      let filtered = [...allProducts];
+
+      // Search filter
+      if (searchTerm) {
+        filtered = filtered.filter(prod =>
+          prod.title.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      // Category filter
+      if (selectedCategory !== 'all') {
+        filtered = filtered.filter(prod =>
+          prod.category === selectedCategory
+        );
+      }
+
+      // Sorting
+      if (sortOption === 'asc') {
+        filtered.sort((a, b) => a.price - b.price);
+      } else if (sortOption === 'desc') {
+        filtered.sort((a, b) => b.price - a.price);
+      }
+
+      displayProducts(filtered);
+    }
+
+    // Event listeners
+    searchInput.addEventListener('input', filterAndDisplay);
+    categoryFilter.addEventListener('change', filterAndDisplay);
+    priceSort.addEventListener('change', filterAndDisplay);
+
+    // Initial fetch
+    fetchProducts();
+    fetchCategories();
+  </script>
+</body>
+</html>

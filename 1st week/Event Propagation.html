@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Event Propagation Exploration</title>
+  <style>
+    .outer {
+      border: 3px solid red;
+      padding: 50px;
+    }
+    .middle {
+      border: 3px solid green;
+      padding: 30px;
+    }
+    .inner {
+      border: 3px solid blue;
+      padding: 20px;
+    }
+    button {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Event Propagation Exploration</h1>
+
+  <div class="outer" id="outerDiv">
+    Outer Div
+    <div class="middle" id="middleDiv">
+      Middle Div
+      <div class="inner" id="innerDiv">
+        Inner Div
+        <button id="innerBtn">Inner Button</button>
+      </div>
+      <button id="middleBtn">Middle Button</button>
+    </div>
+    <button id="outerBtn">Outer Button</button>
+  </div>
+
+  <script>
+    
+    const outerDiv = document.getElementById('outerDiv');
+    outerDiv.addEventListener('click', function() {
+      alert('Outer Div clicked (Bubbling)');
+    });
+
+    outerDiv.addEventListener('click', function() {
+      alert('Outer Div clicked (Capturing)');
+    }, true);  
+  
+    const middleDiv = document.getElementById('middleDiv');
+    middleDiv.addEventListener('click', function() {
+      alert('Middle Div clicked (Bubbling)');
+    });
+
+    middleDiv.addEventListener('click', function() {
+      alert('Middle Div clicked (Capturing)');
+    }, true);
+
+    const innerDiv = document.getElementById('innerDiv');
+    innerDiv.addEventListener('click', function() {
+      alert('Inner Div clicked (Bubbling)');
+    });
+
+    innerDiv.addEventListener('click', function() {
+      alert('Inner Div clicked (Capturing)');
+    }, true);
+
+    document.getElementById('outerBtn').addEventListener('click', function(event) {
+      alert('Outer Button clicked');
+    });
+
+    document.getElementById('middleBtn').addEventListener('click', function(event) {
+      alert('Middle Button clicked');
+    });
+
+    document.getElementById('innerBtn').addEventListener('click', function(event) {
+      alert('Inner Button clicked');
+      event.stopPropagation();
+    });
+
+  </script>
+
+</body>
+</html>

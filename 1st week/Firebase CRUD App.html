@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Firebase CRUD App</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        input, button { padding: 10px; margin: 5px; }
+        table { border-collapse: collapse; width: 50%; }
+        th, td { border: 1px solid #ccc; padding: 10px; }
+    </style>
+</head>
+<body>
+
+<h2>Firebase Realtime Database CRUD</h2>
+
+<form id="userForm">
+    <input type="hidden" id="userId">
+    <input type="text" id="name" placeholder="Name" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <button type="submit">Save</button>
+</form>
+
+<h3>Users</h3>
+<table id="userTable">
+    <tr><th>Name</th><th>Email</th><th>Actions</th></tr>
+</table>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script>
+  // Your Firebase Config Here
+   const firebaseConfig = {
+    apiKey: "AIzaSyCa2MFTnX9cm1J4S1hvyRKFcRSjBneoHXM",
+    authDomain: "web-app-2b37b.firebaseapp.com",
+    databaseURL: "https://web-app-2b37b-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "web-app-2b37b",
+    storageBucket: "web-app-2b37b.firebasestorage.app",
+    messagingSenderId: "784264436465",
+    appId: "1:784264436465:web:b2f664320c9aea5581e750",
+    measurementId: "G-69MHY4CXNB"
+  };
+
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const userForm = document.getElementById("userForm");
+  const name = document.getElementById("name");
+  const email = document.getElementById("email");
+  const userId = document.getElementById("userId");
+  const userTable = document.getElementById("userTable");
+
+  userForm.addEventListener("submit", function(e){
+    e.preventDefault();
+    if(userId.value){
+      updateUser(userId.value, name.value, email.value);
+    } else {
+      createUser(name.value, email.value);
+    }
+    userForm.reset();
+    userId.value = "";
+  });
+
+  function createUser(name, email) {
+    const newUserRef = db.ref("users").push();
+    newUserRef.set({ name, email });
+  }
+
+  function readUsers() {
+    db.ref("users").on("value", snapshot => {
+      userTable.innerHTML = "<tr><th>Name</th><th>Email</th><th>Actions</th></tr>";
+      snapshot.forEach(childSnapshot => {
+        const data = childSnapshot.val();
+        const key = childSnapshot.key;
+        userTable.innerHTML += `
+          <tr>
+            <td>${data.name}</td>
+            <td>${data.email}</td>
+            <td>
+              <button onclick="editUser('${key}', '${data.name}', '${data.email}')">Edit</button>
+              <button onclick="deleteUser('${key}')">Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+    });
+  }
+
+  function updateUser(id, name, email) {
+    db.ref("users/" + id).set({ name, email });
+  }
+
+  function deleteUser(id) {
+    db.ref("users/" + id).remove();
+  }
+
+  function editUser(id, nameValue, emailValue) {
+    userId.value = id;
+    name.value = nameValue;
+    email.value = emailValue;
+  }
+
+  readUsers();
+</script>
+
+</body>
+</html>

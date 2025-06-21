@@ -1,0 +1,254 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Multi-User Shopping Cart</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .hidden { display: none; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+    th { background-color: #f4f4f4; }
+    input[type="number"] { width: 60px; }
+    .total { font-weight: bold; }
+    button { cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h1>Multi-User Shopping Cart</h1>
+
+  <!-- Login Form -->
+  <div id="login-section">
+    <label for="username">Enter Username:</label>
+    <input type="text" id="username" />
+    <button id="login-btn">Login</button>
+    <p id="login-error" style="color: red;"></p>
+  </div>
+
+  <!-- Cart Section (hidden by default) -->
+  <div id="cart-section" class="hidden">
+    <h2>Welcome, <span id="current-user"></span>!</h2>
+
+    <!-- Add Item Form -->
+    <h3>Add Item to Cart</h3>
+    <input type="text" id="item-name" placeholder="Item Name" />
+    <input type="number" id="item-price" placeholder="Price" min="0" step="0.01" />
+    <input type="number" id="item-qty" placeholder="Quantity" min="1" value="1" />
+    <button id="add-item-btn">Add Item</button>
+    <p id="add-item-error" style="color: red;"></p>
+
+    <!-- Cart Table -->
+    <h3>Your Cart</h3>
+    <table id="cart-table">
+      <thead>
+        <tr>
+          <th>Item Name</th>
+          <th>Price ($)</th>
+          <th>Quantity</th>
+          <th>Total ($)</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="cart-body"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3" class="total">Grand Total</td>
+          <td colspan="2" class="total" id="grand-total">$0.00</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <button id="logout-btn" style="margin-top: 20px;">Logout</button>
+  </div>
+
+  <script>
+    const loginSection = document.getElementById('login-section');
+    const cartSection = document.getElementById('cart-section');
+    const usernameInput = document.getElementById('username');
+    const loginBtn = document.getElementById('login-btn');
+    const loginError = document.getElementById('login-error');
+
+    const currentUserDisplay = document.getElementById('current-user');
+
+    const itemNameInput = document.getElementById('item-name');
+    const itemPriceInput = document.getElementById('item-price');
+    const itemQtyInput = document.getElementById('item-qty');
+    const addItemBtn = document.getElementById('add-item-btn');
+    const addItemError = document.getElementById('add-item-error');
+
+    const cartTableBody = document.getElementById('cart-body');
+    const grandTotalDisplay = document.getElementById('grand-total');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    let currentUser = null;
+    let cart = [];
+
+    // Load all users' carts from localStorage or initialize empty object
+    function loadAllCarts() {
+      const carts = localStorage.getItem('multiUserCarts');
+      return carts ? JSON.parse(carts) : {};
+    }
+
+    // Save all users' carts to localStorage
+    function saveAllCarts(carts) {
+      localStorage.setItem('multiUserCarts', JSON.stringify(carts));
+    }
+
+    // Load current user's cart
+    function loadUserCart(username) {
+      const allCarts = loadAllCarts();
+      return allCarts[username] || [];
+    }
+
+    // Save current user's cart
+    function saveUserCart() {
+      const allCarts = loadAllCarts();
+      allCarts[currentUser] = cart;
+      saveAllCarts(allCarts);
+    }
+
+    // Validate username uniqueness
+    function isUsernameUnique(username) {
+      const allCarts = loadAllCarts();
+      return !(username in allCarts);
+    }
+
+    // Render cart items in table
+    function renderCart() {
+      cartTableBody.innerHTML = '';
+
+      let grandTotal = 0;
+
+      cart.forEach((item, index) => {
+        const total = item.price * item.quantity;
+        grandTotal += total;
+
+        const row = document.createElement('tr');
+
+        // Item name
+        const nameTd = document.createElement('td');
+        nameTd.textContent = item.itemName;
+        row.appendChild(nameTd);
+
+        // Price
+        const priceTd = document.createElement('td');
+        priceTd.textContent = item.price.toFixed(2);
+        row.appendChild(priceTd);
+
+        // Quantity (editable input)
+        const qtyTd = document.createElement('td');
+        const qtyInput = document.createElement('input');
+        qtyInput.type = 'number';
+        qtyInput.min = 1;
+        qtyInput.value = item.quantity;
+        qtyInput.addEventListener('change', () => {
+          const val = parseInt(qtyInput.value);
+          if (val >= 1) {
+            item.quantity = val;
+            saveUserCart();
+            renderCart();
+          } else {
+            qtyInput.value = item.quantity; // revert invalid input
+          }
+        });
+        qtyTd.appendChild(qtyInput);
+        row.appendChild(qtyTd);
+
+        // Total cost per item
+        const totalTd = document.createElement('td');
+        totalTd.textContent = total.toFixed(2);
+        row.appendChild(totalTd);
+
+        // Actions (Remove button)
+        const actionsTd = document.createElement('td');
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = 'Remove';
+        removeBtn.addEventListener('click', () => {
+          cart.splice(index, 1);
+          saveUserCart();
+          renderCart();
+        });
+        actionsTd.appendChild(removeBtn);
+        row.appendChild(actionsTd);
+
+        cartTableBody.appendChild(row);
+      });
+
+      grandTotalDisplay.textContent = `$${grandTotal.toFixed(2)}`;
+    }
+
+    // Login handler
+    loginBtn.addEventListener('click', () => {
+      const username = usernameInput.value.trim();
+
+      if (!username) {
+        loginError.textContent = 'Username cannot be empty.';
+        return;
+      }
+
+      // For this app, we allow existing or new usernames, but username should be unique on first creation.
+      // So if user does not exist, create empty cart.
+      currentUser = username;
+      cart = loadUserCart(currentUser);
+
+      loginSection.classList.add('hidden');
+      cartSection.classList.remove('hidden');
+      currentUserDisplay.textContent = currentUser;
+
+      renderCart();
+
+      // Clear errors and inputs
+      loginError.textContent = '';
+      usernameInput.value = '';
+    });
+
+    // Add item handler
+    addItemBtn.addEventListener('click', () => {
+      const itemName = itemNameInput.value.trim();
+      const price = parseFloat(itemPriceInput.value);
+      const quantity = parseInt(itemQtyInput.value);
+
+      if (!itemName) {
+        addItemError.textContent = 'Item name is required.';
+        return;
+      }
+      if (isNaN(price) || price <= 0) {
+        addItemError.textContent = 'Please enter a valid positive price.';
+        return;
+      }
+      if (isNaN(quantity) || quantity <= 0) {
+        addItemError.textContent = 'Quantity must be at least 1.';
+        return;
+      }
+
+      // Check if item already exists in cart; if so, increment quantity
+      const existingItemIndex = cart.findIndex(item => item.itemName.toLowerCase() === itemName.toLowerCase());
+      if (existingItemIndex >= 0) {
+        cart[existingItemIndex].quantity += quantity;
+      } else {
+        cart.push({ itemName, price, quantity });
+      }
+
+      saveUserCart();
+      renderCart();
+
+      // Clear input fields and error
+      itemNameInput.value = '';
+      itemPriceInput.value = '';
+      itemQtyInput.value = 1;
+      addItemError.textContent = '';
+    });
+
+    // Logout handler
+    logoutBtn.addEventListener('click', () => {
+      currentUser = null;
+      cart = [];
+      cartSection.classList.add('hidden');
+      loginSection.classList.remove('hidden');
+    });
+  </script>
+
+</body>
+</html>

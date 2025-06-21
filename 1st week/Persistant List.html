@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Persistent List with localStorage</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 400px;
+      margin: 30px auto;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    h1 {
+      text-align: center;
+    }
+    input[type="text"] {
+      width: 70%;
+      padding: 8px;
+      margin-right: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 8px 15px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+    }
+    ul {
+      margin-top: 20px;
+      padding-left: 20px;
+    }
+    li {
+      padding: 6px 0;
+      border-bottom: 1px solid #eee;
+    }
+    #empty-message {
+      text-align: center;
+      color: #777;
+      margin-top: 20px;
+      font-style: italic;
+    }
+    #clear-btn {
+      background-color: #dc3545;
+      margin-top: 15px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>My Persistent List</h1>
+
+  <div>
+    <input type="text" id="item-input" placeholder="Add new item..." />
+    <button id="add-btn" disabled>Add</button>
+  </div>
+
+  <ul id="item-list"></ul>
+
+  <p id="empty-message" class="hidden">No items added yet.</p>
+
+  <button id="clear-btn" class="hidden">Clear All</button>
+
+  <script>
+    const input = document.getElementById('item-input');
+    const addBtn = document.getElementById('add-btn');
+    const list = document.getElementById('item-list');
+    const emptyMessage = document.getElementById('empty-message');
+    const clearBtn = document.getElementById('clear-btn');
+
+    let items = [];
+
+    // Load items from localStorage
+    function loadItems() {
+      const saved = localStorage.getItem('persistentListItems');
+      if (saved) {
+        items = JSON.parse(saved);
+      } else {
+        items = [];
+      }
+      renderList();
+    }
+
+    // Save items to localStorage
+    function saveItems() {
+      localStorage.setItem('persistentListItems', JSON.stringify(items));
+    }
+
+    // Render the list items
+    function renderList() {
+      list.innerHTML = '';
+
+      if (items.length === 0) {
+        emptyMessage.classList.remove('hidden');
+        clearBtn.classList.add('hidden');
+      } else {
+        emptyMessage.classList.add('hidden');
+        clearBtn.classList.remove('hidden');
+
+        items.forEach((item, index) => {
+          const li = document.createElement('li');
+          li.textContent = item;
+          list.appendChild(li);
+        });
+      }
+    }
+
+    // Add new item
+    addBtn.addEventListener('click', () => {
+      const newItem = input.value.trim();
+      if (newItem === '') return;
+
+      items.push(newItem);
+      saveItems();
+      renderList();
+
+      input.value = '';
+      addBtn.disabled = true;
+    });
+
+    // Enable Add button only if input is non-empty
+    input.addEventListener('input', () => {
+      addBtn.disabled = input.value.trim() === '';
+    });
+
+    // Clear all items
+    clearBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear all items?')) {
+        items = [];
+        saveItems();
+        renderList();
+      }
+    });
+
+    // Initialize on page load
+    window.onload = () => {
+      loadItems();
+      addBtn.disabled = true;
+    };
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,79 @@
+<form id="preferencesForm">
+  <label for="theme">Theme:</label>
+  <select id="theme">
+    <option value="light">Light</option>
+    <option value="dark">Dark</option>
+  </select>
+
+  <label for="language">Language:</label>
+  <select id="language">
+    <option value="en">English</option>
+    <option value="es">Spanish</option>
+  </select>
+
+  <label for="notifications">Notifications:</label>
+  <input type="checkbox" id="notifications">
+
+  <button type="submit">Save Preferences</button>
+</form>
+
+<script>
+  const form = document.getElementById('preferencesForm');
+  const themeSelect = document.getElementById('theme');
+  const languageSelect = document.getElementById('language');
+  const notificationsCheckbox = document.getElementById('notifications');
+
+  // Function to apply the selected theme dynamically to the page
+  function applyTheme(theme) {
+    document.body.className = ''; // Clear previous classes
+    document.body.classList.add(theme); // Add new theme class (e.g., "light" or "dark")
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    // Create preferences object from current form values
+    const preferences = {
+      theme: themeSelect.value,
+      language: languageSelect.value,
+      notifications: notificationsCheckbox.checked
+    };
+
+    // Save preferences as JSON string in localStorage
+    localStorage.setItem('preferences', JSON.stringify(preferences));
+
+    // Apply the theme dynamically on save
+    applyTheme(preferences.theme);
+
+    alert('Preferences Saved!');
+  });
+
+  window.onload = () => {
+    // Retrieve saved preferences string from localStorage
+    const preferencesStr = localStorage.getItem('preferences');
+    if (preferencesStr) {
+      // Parse preferences JSON string to object
+      const preferences = JSON.parse(preferencesStr);
+
+      // Set form inputs using the stored preferences
+      themeSelect.value = preferences.theme;
+      languageSelect.value = preferences.language;
+      notificationsCheckbox.checked = preferences.notifications;
+
+      // Apply theme dynamically on page load
+      applyTheme(preferences.theme);
+    }
+  };
+</script>
+
+<style>
+  /* Optional styles to visualize theme change */
+  body.light {
+    background-color: white;
+    color: black;
+  }
+  body.dark {
+    background-color: #222;
+    color: white;
+  }
+</style>

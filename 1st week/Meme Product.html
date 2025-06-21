@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Meme Product Catalog</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
+    }
+    #controls {
+      margin-bottom: 20px;
+    }
+    input, select, button {
+      padding: 8px;
+      margin: 5px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    .meme {
+      border: 2px solid #ccc;
+      padding: 10px;
+      text-align: center;
+      position: relative;
+      transition: 0.2s;
+    }
+    .meme img {
+      width: 100%;
+      height: auto;
+    }
+    .meme.favorite {
+      border-color: gold;
+      box-shadow: 0 0 10px gold;
+    }
+    .favorite-badge {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: gold;
+      color: black;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🔥 Meme Product Catalog</h1>
+
+  <div id="controls">
+    <input type="text" id="search" placeholder="Search memes..." />
+    <select id="sort">
+      <option value="name">Sort by Name</option>
+      <option value="width">Sort by Width</option>
+      <option value="height">Sort by Height</option>
+    </select>
+    <label>
+      <input type="checkbox" id="showFavoritesOnly" />
+      Show Favorites Only
+    </label>
+    <button onclick="fetchMemes()">Fetch Memes</button>
+  </div>
+
+  <div class="grid" id="memeGrid"></div>
+
+  <script>
+    let memes = [];
+    let favorites = JSON.parse(localStorage.getItem('favorites')) || {};
+    const searchInput = document.getElementById('search');
+    const sortSelect = document.getElementById('sort');
+    const showFavCheckbox = document.getElementById('showFavoritesOnly');
+
+    // Restore state
+    searchInput.value = localStorage.getItem('search') || '';
+    sortSelect.value = localStorage.getItem('sort') || 'name';
+    showFavCheckbox.checked = localStorage.getItem('showFavoritesOnly') === 'true';
+
+    // Fetch memes
+    async function fetchMemes() {
+      const res = await fetch("https://api.imgflip.com/get_memes");
+      const data = await res.json();
+      memes = data.data.memes;
+      renderMemes();
+    }
+
+    // Render memes
+    function renderMemes() {
+      let filtered = memes.filter(m =>
+        m.name.toLowerCase().includes(searchInput.value.toLowerCase())
+      );
+
+      if (showFavCheckbox.checked) {
+        filtered = filtered.filter(m => favorites[m.id]);
+      }
+
+      const sortBy = sortSelect.value;
+      filtered.sort((a, b) => {
+        if (sortBy === "name") return a.name.localeCompare(b.name);
+        return a[sortBy] - b[sortBy];
+      });
+
+      const grid = document.getElementById("memeGrid");
+      grid.innerHTML = "";
+
+      filtered.forEach(meme => {
+        const div = document.createElement("div");
+        div.className = "meme" + (favorites[meme.id] ? " favorite" : "");
+        div.innerHTML = `
+          ${favorites[meme.id] ? '<div class="favorite-badge">★ Favorite</div>' : ""}
+          <img src="${meme.url}" alt="${meme.name}" />
+          <p>${meme.name}</p>
+          <button onclick="toggleFavorite('${meme.id}')">
+            ${favorites[meme.id] ? "Remove Favorite" : "Add to Favorites"}
+          </button>
+        `;
+        grid.appendChild(div);
+      });
+
+      // Save state
+      localStorage.setItem("search", searchInput.value);
+      localStorage.setItem("sort", sortBy);
+      localStorage.setItem("showFavoritesOnly", showFavCheckbox.checked);
+    }
+
+    // Toggle favorite
+    function toggleFavorite(id) {
+      favorites[id] = !favorites[id];
+      localStorage.setItem("favorites", JSON.stringify(favorites));
+      renderMemes();
+    }
+
+    // Event listeners
+    searchInput.addEventListener("input", renderMemes);
+    sortSelect.addEventListener("change", renderMemes);
+    showFavCheckbox.addEventListener("change", renderMemes);
+
+    // Initial render if memes are cached
+    if (memes.length === 0) fetchMemes();
+  </script>
+
+</body>
+</html>
