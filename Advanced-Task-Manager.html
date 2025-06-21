@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Advanced Task Manager</title>
+  <style>
+    body { font-family: Arial; }
+    ul { list-style: none; padding: 0; }
+    li { margin: 5px 0; }
+    button { margin: 2px; }
+  </style>
+</head>
+<body>
+
+  <h1>Task Manager</h1>
+
+  <!-- Input to add task -->
+  <input type="text" id="taskInput" placeholder="Enter task">
+  <button id="addTaskBtn">Add Task</button>
+
+  <!-- Filter buttons -->
+  <div>
+    <button id="allBtn">All</button>
+    <button id="completedBtn">Completed</button>
+    <button id="incompleteBtn">Incomplete</button>
+    <button id="sortBtn">Sort A-Z</button>
+  </div>
+
+  <!-- Task counters -->
+  <div id="counter"></div>
+
+  <!-- Task list -->
+  <ul id="taskList"></ul>
+
+  <script>
+    // Array to store tasks
+    let tasks = [];
+
+    // DOM Elements
+    const taskInput = document.getElementById('taskInput');
+    const addTaskBtn = document.getElementById('addTaskBtn');
+    const taskList = document.getElementById('taskList');
+    const counter = document.getElementById('counter');
+
+    const allBtn = document.getElementById('allBtn');
+    const completedBtn = document.getElementById('completedBtn');
+    const incompleteBtn = document.getElementById('incompleteBtn');
+    const sortBtn = document.getElementById('sortBtn');
+
+    let currentFilter = 'all'; // default filter
+
+    // Function to render tasks based on filter
+    function renderTasks() {
+      taskList.innerHTML = ""; // clear list
+
+      // Use filter HOF based on selected filter
+      let filteredTasks = tasks.filter(task => {
+        if (currentFilter === 'completed') return task.completed;
+        if (currentFilter === 'incomplete') return !task.completed;
+        return true; // for 'all'
+      });
+
+      // Map through filtered tasks to generate list items
+      filteredTasks.map((task, index) => {
+        const li = document.createElement('li');
+        li.dataset.index = index; // assign index for delegation
+
+        li.innerHTML = `
+          <input type="checkbox" ${task.completed ? 'checked' : ''}>
+          <span style="${task.completed ? 'text-decoration: line-through;' : ''}">${task.text}</span>
+          <button class="deleteBtn">Delete</button>
+        `;
+
+        taskList.appendChild(li);
+      });
+
+      updateCounter();
+    }
+
+    // Function to update the counters using HOFs
+    function updateCounter() {
+      const total = tasks.length;
+      const completed = tasks.filter(task => task.completed).length;
+      const incomplete = total - completed;
+
+      counter.textContent = `Total: ${total} | Completed: ${completed} | Incomplete: ${incomplete}`;
+    }
+
+    // Add new task
+    addTaskBtn.addEventListener('click', () => {
+      const text = taskInput.value.trim();
+      if (text === "") {
+        alert("Please enter a task");
+        return;
+      }
+      tasks.push({ text, completed: false });
+      taskInput.value = "";
+      renderTasks();
+    });
+
+    // Event Delegation for delete and toggle checkbox
+    taskList.addEventListener('click', (e) => {
+      const index = e.target.closest('li').dataset.index;
+
+      if (e.target.tagName === 'BUTTON' && e.target.classList.contains('deleteBtn')) {
+        // Delete task
+        tasks.splice(index, 1);
+      }
+
+      if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') {
+        // Toggle completed status
+        tasks[index].completed = e.target.checked;
+      }
+
+      renderTasks();
+    });
+
+    // Filter buttons
+    allBtn.addEventListener('click', () => {
+      currentFilter = 'all';
+      renderTasks();
+    });
+
+    completedBtn.addEventListener('click', () => {
+      currentFilter = 'completed';
+      renderTasks();
+    });
+
+    incompleteBtn.addEventListener('click', () => {
+      currentFilter = 'incomplete';
+      renderTasks();
+    });
+
+    // Sort tasks alphabetically using sort() HOF
+    sortBtn.addEventListener('click', () => {
+      tasks.sort((a, b) => a.text.localeCompare(b.text));
+      renderTasks();
+    });
+
+  </script>
+</body>
+</html>
