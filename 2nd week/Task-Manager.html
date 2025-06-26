@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Task Manager Inline</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    .task {
+      margin: 10px 0;
+      padding: 10px;
+      background-color: #f2f2f2;
+      border-radius: 5px;
+    }
+
+    .task input, .task select {
+      margin-right: 5px;
+    }
+
+    .actions button {
+      margin-left: 5px;
+    }
+
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h2>Task Manager App</h2>
+  <div id="task-list"></div>
+
+  <script>
+    const API_URL = "https://6829a2c86075e87073a708bd.mockapi.io/tasks"; // Replace with your MockAPI endpoint
+    const taskList = document.getElementById("task-list");
+
+    async function fetchTasks() {
+      try {
+        const res = await fetch(API_URL);
+        const tasks = await res.json();
+        renderTasks(tasks);
+      } catch {
+        taskList.innerHTML = "<p class='error'>Failed to load tasks.</p>";
+      }
+    }
+
+    function renderTasks(tasks) {
+      taskList.innerHTML = "";
+      tasks.forEach(task => {
+        const taskDiv = document.createElement("div");
+        taskDiv.className = "task";
+        taskDiv.innerHTML = `
+          <input type="text" id="title-${task.id}" value="${task.title}" />
+          <select id="status-${task.id}">
+            <option value="Pending" ${task.status === "Pending" ? "selected" : ""}>Pending</option>
+            <option value="Completed" ${task.status === "Completed" ? "selected" : ""}>Completed</option>
+          </select>
+          <span class="actions">
+            <button onclick="updateTask('${task.id}')">Save</button>
+            <button onclick="deleteTask('${task.id}')">Delete</button>
+          </span>
+        `;
+        taskList.appendChild(taskDiv);
+      });
+    }
+
+    async function updateTask(id) {
+      const title = document.getElementById(`title-${id}`).value;
+      const status = document.getElementById(`status-${id}`).value;
+
+      try {
+        await fetch(`${API_URL}/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, status })
+        });
+        fetchTasks();
+      } catch {
+        alert("Failed to update task.");
+      }
+    }
+
+    async function deleteTask(id) {
+      const confirmDelete = confirm("Are you sure you want to delete this task?");
+      if (!confirmDelete) return;
+
+      try {
+        await fetch(`${API_URL}/${id}`, {
+          method: "DELETE"
+        });
+        fetchTasks();
+      } catch {
+        alert("Failed to delete task.");
+      }
+    }
+
+    fetchTasks();
+  </script>
+</body>
+</html>
