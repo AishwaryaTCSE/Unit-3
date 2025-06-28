@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Firebase Users</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+
+    table {
+      width: 60%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>List of Users</h1>
+  <div id="error" class="error"></div>
+  <table id="userTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- ✅ Wrap JS inside <script> tag -->
+  <script>
+    const DATABASE_URL = 'https://user-list-c7a80-default-rtdb.asia-southeast1.firebasedatabase.app/users.json';
+
+    fetch(DATABASE_URL)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok: " + response.statusText);
+        }
+        return response.json();
+      })
+      .then(data => {
+        const tbody = document.querySelector("#userTable tbody");
+        tbody.innerHTML = "";
+
+        for (let key in data) {
+          const user = data[key];
+          const row = document.createElement("tr");
+
+          const nameCell = document.createElement("td");
+          nameCell.textContent = user.name;
+
+          const emailCell = document.createElement("td");
+          emailCell.textContent = user.email;
+
+          row.appendChild(nameCell);
+          row.appendChild(emailCell);
+          tbody.appendChild(row);
+        }
+      })
+      .catch(error => {
+        document.getElementById("error").textContent = "Error fetching data: " + error.message;
+      });
+  </script>
+</body>
+</html>
