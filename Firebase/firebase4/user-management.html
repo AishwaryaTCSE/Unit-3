@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Firebase User Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 700px;
+      margin: auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 0 10px #ccc;
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    th {
+      background: #f0f0f0;
+    }
+    button.delete-btn {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button.delete-btn:hover {
+      background-color: #b02a37;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Users List</h2>
+  <table id="usersTable">
+    <thead>
+      <tr><th>Name</th><th>Email</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+      <!-- User rows will be added here -->
+    </tbody>
+  </table>
+
+  <script>
+    // Replace this URL with your actual Firebase Realtime Database URL for users
+    const FIREBASE_DB_URL = "https://user-list-c7a80-default-rtdb.asia-southeast1.firebasedatabase.app/users";
+
+    const usersTableBody = document.querySelector("#usersTable tbody");
+
+    // Fetch and display users
+    async function loadUsers() {
+      usersTableBody.innerHTML = "<tr><td colspan='3'>Loading...</td></tr>";
+      try {
+        const response = await fetch(`${FIREBASE_DB_URL}.json`);
+        const data = await response.json();
+
+        if (!data) {
+          usersTableBody.innerHTML = "<tr><td colspan='3'>No users found.</td></tr>";
+          return;
+        }
+
+        usersTableBody.innerHTML = "";
+        // data keys are user IDs (like user1, user2)
+        Object.entries(data).forEach(([key, user]) => {
+          const tr = document.createElement("tr");
+          tr.id = key;  // set row id as user key for easy removal later
+          tr.innerHTML = `
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td><button class="delete-btn" data-key="${key}">Delete</button></td>
+          `;
+          usersTableBody.appendChild(tr);
+        });
+
+        // Attach delete event listeners
+        document.querySelectorAll(".delete-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const key = btn.getAttribute("data-key");
+            deleteUser(key);
+          });
+        });
+
+      } catch (error) {
+        usersTableBody.innerHTML = `<tr><td colspan='3' style="color:red;">Error loading users: ${error.message}</td></tr>`;
+      }
+    }
+
+    // Fixed deleteUser function with dynamic key
+    async function deleteUser(key) {
+      if (!key) return;
+      try {
+        const res = await fetch(`${FIREBASE_DB_URL}/${key}.json`, {
+          method: 'DELETE'
+        });
+        if (!res.ok) throw new Error("Failed to delete user");
+
+        console.log("User deleted successfully");
+        removeUserFromTable(key);
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        alert("Failed to delete user. Try again.");
+      }
+    }
+
+    // Remove user row from table
+    function removeUserFromTable(key) {
+      const row = document.getElementById(key);
+      if (row) row.remove();
+    }
+
+    // Load users on page load
+    loadUsers();
+  </script>
+
+</body>
+</html>
