@@ -1,0 +1,211 @@
+\<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edit Feedback - Firebase Realtime DB</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background: #f7f9fc;
+      max-width: 800px;
+      margin: auto;
+    }
+    h2 {
+      margin-bottom: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background-color: #eee;
+    }
+    button.edit-btn {
+      background-color: #007bff;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button.edit-btn:hover {
+      background-color: #0056b3;
+    }
+    form {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #aaa;
+      max-width: 400px;
+      margin-bottom: 20px;
+    }
+    form input, form textarea {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    form button {
+      background-color: #28a745;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #statusMsg {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Feedback Entries</h2>
+  <table id="feedbackTable">
+    <thead>
+      <tr><th>Name</th><th>Message</th><th>Edit</th></tr>
+    </thead>
+    <tbody>
+      <!-- Feedback entries will be injected here -->
+    </tbody>
+  </table>
+
+  <h2>Edit Feedback</h2>
+  <form id="editForm" style="display:none;">
+    <input type="text" id="editUsername" placeholder="Username" required />
+    <textarea id="editMessage" placeholder="Message" rows="4" required></textarea>
+    <button type="submit">Update Feedback</button>
+    <div id="statusMsg"></div>
+  </form>
+
+  <script>
+    // Replace with your Firebase Realtime Database URL
+    const FIREBASE_DB_URL = "https://masai-database-default-rtdb.asia-southeast1.firebasedatabase.app/feedbacks";
+
+    const tableBody = document.querySelector("#feedbackTable tbody");
+    const editForm = document.getElementById("editForm");
+    const editUsername = document.getElementById("editUsername");
+    const editMessage = document.getElementById("editMessage");
+    const statusMsg = document.getElementById("statusMsg");
+
+    // To store the current editing feedback ID
+    let currentEditId = null;
+
+    // Fetch and display feedbacks in table
+    async function loadFeedbacks() {
+      tableBody.innerHTML = "<tr><td colspan='3'>Loading...</td></tr>";
+      try {
+        const res = await fetch(`${FIREBASE_DB_URL}.json`);
+        const data = await res.json();
+
+        if (!data) {
+          tableBody.innerHTML = "<tr><td colspan='3'>No feedback found.</td></tr>";
+          return;
+        }
+
+        tableBody.innerHTML = "";
+
+        Object.entries(data).forEach(([id, feedback]) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${feedback.username}</td>
+            <td>${feedback.message}</td>
+            <td><button class="edit-btn" data-id="${id}">Edit</button></td>
+          `;
+          tableBody.appendChild(tr);
+        });
+
+        // Add click event listeners to all edit buttons
+        document.querySelectorAll(".edit-btn").forEach(button => {
+          button.addEventListener("click", onEditClick);
+        });
+
+      } catch (error) {
+        tableBody.innerHTML = `<tr><td colspan='3' style="color:red;">Error loading feedbacks: ${error.message}</td></tr>`;
+      }
+    }
+
+    // When edit button is clicked
+    function onEditClick(event) {
+      currentEditId = event.target.getAttribute("data-id");
+      if (!currentEditId) return;
+
+      // Fetch the single feedback data to pre-fill form
+      fetch(`${FIREBASE_DB_URL}/${currentEditId}.json`)
+        .then(res => res.json())
+        .then(feedback => {
+          editUsername.value = feedback.username || "";
+          editMessage.value = feedback.message || "";
+          statusMsg.textContent = "";
+          editForm.style.display = "block";
+          editUsername.focus();
+          window.scrollTo({ top: editForm.offsetTop, behavior: "smooth" });
+        })
+        .catch(err => {
+          statusMsg.style.color = "red";
+          statusMsg.textContent = "Failed to load feedback for editing.";
+        });
+    }
+
+    // Handle form submission for updating feedback
+    editForm.addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      if (!currentEditId) {
+        statusMsg.style.color = "red";
+        statusMsg.textContent = "No feedback selected for update.";
+        return;
+      }
+
+      const updatedData = {
+        username: editUsername.value.trim(),
+        message: editMessage.value.trim()
+      };
+
+      if (!updatedData.username || !updatedData.message) {
+        statusMsg.style.color = "red";
+        statusMsg.textContent = "Both fields are required.";
+        return;
+      }
+
+      try {
+        const res = await fetch(`${FIREBASE_DB_URL}/${currentEditId}.json`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(updatedData)
+        });
+
+        if (res.ok) {
+          statusMsg.style.color = "green";
+          statusMsg.textContent = "Feedback updated successfully!";
+          editForm.style.display = "none";
+          currentEditId = null;
+          loadFeedbacks(); // refresh the table
+        } else {
+          throw new Error("Failed to update feedback.");
+        }
+      } catch (error) {
+        statusMsg.style.color = "red";
+        statusMsg.textContent = error.message;
+      }
+    });
+
+    // Load feedbacks on page load
+    loadFeedbacks();
+  </script>
+
+</body>
+</html>
