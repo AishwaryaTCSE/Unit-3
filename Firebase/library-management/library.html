@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Library Management System</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+    }
+    form {
+      margin-bottom: 20px;
+    }
+    input, select {
+      margin: 5px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin: 5px 0;
+      background: #f9f9f9;
+    }
+    button {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>📚 Library Management System</h1>
+
+  <!-- Book Form -->
+  <h2>Add or Update Book</h2>
+  <form id="bookForm">
+    <input type="hidden" id="bookId" />
+    <input type="text" id="title" placeholder="Title" required />
+    <input type="text" id="author" placeholder="Author" required />
+    <input type="text" id="genre" placeholder="Genre" required />
+    <input type="number" id="publishedYear" placeholder="Year" required />
+    <select id="available">
+      <option value="true">Available</option>
+      <option value="false">Not Available</option>
+    </select>
+    <button type="submit">Save Book</button>
+  </form>
+
+  <!-- Book Filter -->
+  <h3>Book Filters</h3>
+  <select id="filterGenre"></select>
+  <select id="sortBooks">
+    <option value="">Sort By</option>
+    <option value="title">Title</option>
+    <option value="author">Author</option>
+    <option value="publishedYear">Year</option>
+  </select>
+
+  <!-- Books Display -->
+  <h2>Books</h2>
+  <div id="booksList"></div>
+  <div id="paginationBooks"></div>
+
+  <script>
+  const firebaseConfig = {
+  apiKey: "AIzaSyDhl1e8arTFjdGCXWomRTklU1Y79fGNR0o",
+  authDomain: "library-management-b700c.firebaseapp.com",
+  databaseURL: "https://library-management-b700c-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "library-management-b700c",
+  storageBucket: "library-management-b700c.firebasestorage.app",
+  messagingSenderId: "25679505999",
+  appId: "1:25679505999:web:6be241ae076b49d6cf583a",
+  measurementId: "G-HE6TJK61XS"
+};
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const bookForm = document.getElementById("bookForm");
+    const booksList = document.getElementById("booksList");
+    const filterGenre = document.getElementById("filterGenre");
+    const sortBooks = document.getElementById("sortBooks");
+
+    bookForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const id = document.getElementById("bookId").value || Date.now();
+      const book = {
+        id,
+        title: document.getElementById("title").value,
+        author: document.getElementById("author").value,
+        genre: document.getElementById("genre").value,
+        publishedYear: Number(document.getElementById("publishedYear").value),
+        available: document.getElementById("available").value === "true"
+      };
+      db.ref("books/" + id).set(book);
+      bookForm.reset();
+      fetchBooks();
+    });
+
+    function fetchBooks() {
+      db.ref("books").once("value", snapshot => {
+        let books = Object.values(snapshot.val() || {});
+
+        const selectedGenre = localStorage.getItem("filterGenre");
+        if (selectedGenre && selectedGenre !== "all") {
+          books = books.filter(b => b.genre === selectedGenre);
+        }
+
+        const sortKey = localStorage.getItem("sortBooks");
+        if (sortKey) {
+          books.sort((a, b) => (a[sortKey] > b[sortKey] ? 1 : -1));
+        }
+
+        renderBooks(books);
+        updateFilterDropdown(books);
+      });
+    }
+
+    function renderBooks(books) {
+      booksList.innerHTML = "";
+      books.forEach(book => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <b>${book.title}</b> by ${book.author} (${book.publishedYear})<br>
+          Genre: ${book.genre} - ${book.available ? "✅" : "❌"}
+          <br><button onclick="editBook(${book.id})">Edit</button>
+          <button onclick="deleteBook(${book.id})">Delete</button>
+        `;
+        booksList.appendChild(div);
+      });
+    }
+
+    function editBook(id) {
+      db.ref("books/" + id).once("value", snapshot => {
+        const b = snapshot.val();
+        document.getElementById("bookId").value = b.id;
+        document.getElementById("title").value = b.title;
+        document.getElementById("author").value = b.author;
+        document.getElementById("genre").value = b.genre;
+        document.getElementById("publishedYear").value = b.publishedYear;
+        document.getElementById("available").value = b.available;
+      });
+    }
+
+    function deleteBook(id) {
+      db.ref("books/" + id).remove();
+      fetchBooks();
+    }
+
+    function updateFilterDropdown(books) {
+      const genres = [...new Set(books.map(b => b.genre))];
+      filterGenre.innerHTML = `<option value="all">All Genres</option>` +
+        genres.map(g => `<option value="${g}">${g}</option>`).join("");
+      filterGenre.value = localStorage.getItem("filterGenre") || "all";
+    }
+
+    filterGenre.addEventListener("change", () => {
+      localStorage.setItem("filterGenre", filterGenre.value);
+      fetchBooks();
+    });
+    sortBooks.addEventListener("change", () => {
+      localStorage.setItem("sortBooks", sortBooks.value);
+      fetchBooks();
+    });
+
+    fetchBooks();
+  </script>
+</body>
+</html>
