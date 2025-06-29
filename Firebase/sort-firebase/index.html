@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sorted Products - JSONPlaceholder</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🛍️ Product (User) List</h1>
+
+    <div class="sort-controls">
+      <label for="sortSelect">Sort by Name:</label>
+      <select id="sortSelect">
+        <option value="asc">Ascending (A → Z)</option>
+        <option value="desc">Descending (Z → A)</option>
+      </select>
+      <button onclick="fetchAndRender()">Sort</button>
+    </div>
+
+    <div id="product-list" class="product-list"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
