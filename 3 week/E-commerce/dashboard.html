@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <style>
+    .product {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin: 10px;
+      max-width: 200px;
+      display: inline-block;
+    }
+    img {
+      width: 100px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Welcome to the Dashboard</h2>
+  <div id="products"></div>
+
+  <script>
+    // Check login
+    if (localStorage.getItem("loggedIn") !== "true") {
+      window.location.href = "login.html";
+    }
+
+    async function fetchProducts() {
+      try {
+        const res = await fetch("https://fakestoreapi.com/products");
+        const data = await res.json();
+        const productsDiv = document.getElementById("products");
+
+        data.forEach(prod => {
+          const div = document.createElement("div");
+          div.className = "product";
+          div.innerHTML = `
+            <img src="${prod.image}" />
+            <h4>${prod.title}</h4>
+            <p>₹${prod.price}</p>
+          `;
+          productsDiv.appendChild(div);
+        });
+      } catch (err) {
+        console.log("Error:", err);
+      }
+    }
+
+    fetchProducts();
+  </script>
+</body>
+</html>

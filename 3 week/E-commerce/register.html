@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register</title>
+</head>
+<body>
+  <h2>Register</h2>
+  <input id="name" type="text" placeholder="Name"><br><br>
+  <input id="email" type="email" placeholder="Email"><br><br>
+  <input id="password" type="password" placeholder="Password"><br><br>
+  <button onclick="registerUser()">Register</button>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+  <script>
+    // Your Firebase config here
+ const firebaseConfig = {
+  apiKey: "AIzaSyCbKbTL3RPI2KtUvGIhc9Cu6t9KAxiGJto",
+  authDomain: "ecommerce-admin-panel-b682d.firebaseapp.com",
+  databaseURL: "https://ecommerce-admin-panel-b682d-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ecommerce-admin-panel-b682d",
+  storageBucket: "ecommerce-admin-panel-b682d.firebasestorage.app",
+  messagingSenderId: "926384347782",
+  appId: "1:926384347782:web:6648d215e0a0ca1b374f07",
+  measurementId: "G-P7V34ZXL2S"
+};
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function registerUser() {
+      const name = document.getElementById("name").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const userId = Date.now();
+
+      db.ref("users/" + userId).set({
+        name,
+        email,
+        password
+      }).then(() => {
+        alert("Registration Successful! Please log in.");
+        window.location.href = "login.html";
+      });
+    }
+  </script>
+</body>
+</html>
