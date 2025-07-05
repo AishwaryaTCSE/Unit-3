@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .product { border: 1px solid #aaa; margin: 10px; padding: 10px; width: 200px; display: inline-block; }
+    input { margin: 5px; padding: 5px; width: 200px; }
+    button { margin: 5px; padding: 5px 10px; }
+  </style>
+</head>
+<body>
+  <h2>Admin Dashboard</h2>
+  <div>
+    <input id="title" placeholder="Title"><br>
+    <input id="price" placeholder="Price" type="number"><br>
+    <input id="image" placeholder="Image URL"><br>
+    <button onclick="addProduct()">Add Product</button>
+  </div>
+  <hr>
+  <div id="product-list"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script>
+   const firebaseConfig = {
+  apiKey: "AIzaSyCbKbTL3RPI2KtUvGIhc9Cu6t9KAxiGJto",
+  authDomain: "ecommerce-admin-panel-b682d.firebaseapp.com",
+  databaseURL: "https://ecommerce-admin-panel-b682d-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ecommerce-admin-panel-b682d",
+  storageBucket: "ecommerce-admin-panel-b682d.firebasestorage.app",
+  messagingSenderId: "926384347782",
+  appId: "1:926384347782:web:6648d215e0a0ca1b374f07",
+  measurementId: "G-P7V34ZXL2S"
+};
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const auth = firebase.auth();
+
+    if (localStorage.getItem("role") !== "admin") {
+      window.location.href = "user-dashboard.html";
+    }
+
+    function addProduct() {
+      const title = document.getElementById("title").value;
+      const price = document.getElementById("price").value;
+      const image = document.getElementById("image").value;
+      const id = Date.now();
+      db.ref("products/" + id).set({ title, price, image });
+    }
+
+    function fetchProducts() {
+      db.ref("products").on("value", snap => {
+        const data = snap.val();
+        const list = document.getElementById("product-list");
+        list.innerHTML = "";
+        for (let id in data) {
+          const p = data[id];
+          const div = document.createElement("div");
+          div.className = "product";
+          div.innerHTML = `
+            <img src="${p.image}" width="100"><br>
+            <b>${p.title}</b><br>
+            ₹${p.price}<br>
+            <button onclick="editProduct('${id}')">Edit</button>
+            <button onclick="deleteProduct('${id}')">Delete</button>
+          `;
+          list.appendChild(div);
+        }
+      });
+    }
+
+    function deleteProduct(id) {
+      db.ref("products/" + id).remove();
+    }
+
+    function editProduct(id) {
+      const newTitle = prompt("New title:");
+      const newPrice = prompt("New price:");
+      if (newTitle && newPrice) {
+        db.ref("products/" + id).update({ title: newTitle, price: newPrice });
+      }
+    }
+
+    fetchProducts();
+  </script>
+</body>
+</html>

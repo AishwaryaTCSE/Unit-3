@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <style>
+    body { font-family: Arial; text-align: center; margin-top: 50px; }
+    input { padding: 10px; margin: 10px; width: 250px; }
+    button { padding: 10px 20px; }
+  </style>
+</head>
+<body>
+  <h2>Login</h2>
+  <input id="email" type="email" placeholder="Email"><br>
+  <input id="password" type="password" placeholder="Password"><br>
+  <button onclick="login()">Login</button>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+  apiKey: "AIzaSyCbKbTL3RPI2KtUvGIhc9Cu6t9KAxiGJto",
+  authDomain: "ecommerce-admin-panel-b682d.firebaseapp.com",
+  databaseURL: "https://ecommerce-admin-panel-b682d-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ecommerce-admin-panel-b682d",
+  storageBucket: "ecommerce-admin-panel-b682d.firebasestorage.app",
+  messagingSenderId: "926384347782",
+  appId: "1:926384347782:web:6648d215e0a0ca1b374f07",
+  measurementId: "G-P7V34ZXL2S"
+};
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then(userCredential => {
+          const userId = userCredential.user.uid;
+          return db.ref("users/" + userId).once("value");
+        })
+        .then(snapshot => {
+          const user = snapshot.val();
+          if (!user) throw new Error("User not found");
+          localStorage.setItem("role", user.role);
+          localStorage.setItem("uid", auth.currentUser.uid);
+          if (user.role === "admin") window.location.href = "admin-dashboard.html";
+          else window.location.href = "user-dashboard.html";
+        })
+        .catch(err => alert("Incorrect email or password!"));
+    }
+  </script>
+</body>
+</html>
