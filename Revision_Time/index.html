@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Search Dashboard</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 2rem;
+      background-color: #f5f7fa;
+    }
+
+    h1 {
+      margin-bottom: 1rem;
+    }
+
+    .container {
+      width: 60%;
+      max-width: 600px;
+    }
+
+    #searchInput {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .stats {
+      margin-bottom: 1rem;
+    }
+
+    #results {
+      background: white;
+      border: 1px solid #ddd;
+      padding: 1rem;
+      border-radius: 5px;
+      min-height: 100px;
+    }
+
+    .highlight {
+      background-color: yellow;
+      font-weight: bold;
+    }
+
+    .loader {
+      margin: 1rem 0;
+      font-weight: bold;
+      color: #555;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #backToTop {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      padding: 10px 15px;
+      background-color: #0077cc;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-size: 14px;
+      display: none;
+    }
+
+    #backToTop:hover {
+      background-color: #005fa3;
+    }
+
+    #noResults {
+      margin-top: 1rem;
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Name Search Dashboard</h1>
+
+  <div class="container">
+    <input type="text" id="searchInput" placeholder="Type to search names..." />
+
+    <div class="stats">
+      <p>📝 Keystrokes: <span id="keystrokeCount">0</span></p>
+      <p>⏱️ Debounced Searches: <span id="debounceCount">0</span></p>
+    </div>
+
+    <div id="loader" class="loader hidden">🔄 Searching...</div>
+
+    <div id="results"></div>
+    <div id="noResults" class="hidden">❌ No results found.</div>
+  </div>
+
+  <button id="backToTop">⬆ Back to Top</button>
+
+  <script>
+    // Generate 300 sample names
+    const names = Array.from({ length: 300 }, (_, i) => `Person_${i + 1}`);
+
+    const input = document.getElementById("searchInput");
+    const resultsDiv = document.getElementById("results");
+    const loader = document.getElementById("loader");
+    const noResults = document.getElementById("noResults");
+    const backToTop = document.getElementById("backToTop");
+
+    const keystrokeCount = document.getElementById("keystrokeCount");
+    const debounceCount = document.getElementById("debounceCount");
+
+    let totalKeystrokes = 0;
+    let totalDebounces = 0;
+
+    function highlightMatch(name, query) {
+      const index = name.toLowerCase().indexOf(query.toLowerCase());
+      if (index === -1) return name;
+      return (
+        name.substring(0, index) +
+        `<span class="highlight">${name.substring(index, index + query.length)}</span>` +
+        name.substring(index + query.length)
+      );
+    }
+
+    function displayResults(filteredNames, query) {
+      resultsDiv.innerHTML = "";
+      if (filteredNames.length === 0) {
+        noResults.classList.remove("hidden");
+        return;
+      }
+      noResults.classList.add("hidden");
+
+      filteredNames.forEach((name) => {
+        const div = document.createElement("div");
+        div.innerHTML = highlightMatch(name, query);
+        resultsDiv.appendChild(div);
+      });
+    }
+
+    function debounce(func, delay) {
+      let timeout;
+      return function (...args) {
+        loader.classList.remove("hidden");
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          loader.classList.add("hidden");
+          func.apply(this, args);
+        }, delay);
+      };
+    }
+
+    function throttle(func, limit) {
+      let lastCall = 0;
+      return function (...args) {
+        const now = new Date().getTime();
+        if (now - lastCall >= limit) {
+          lastCall = now;
+          func.apply(this, args);
+        }
+      };
+    }
+
+    function performSearch(query) {
+      totalDebounces++;
+      debounceCount.textContent = totalDebounces;
+
+      const filtered = names.filter((name) =>
+        name.toLowerCase().includes(query.toLowerCase())
+      );
+      displayResults(filtered, query);
+    }
+
+    const debouncedSearch = debounce(performSearch, 1000);
+
+    input.addEventListener("input", (e) => {
+      totalKeystrokes++;
+      keystrokeCount.textContent = totalKeystrokes;
+
+      const query = e.target.value.trim();
+      if (query === "") {
+        resultsDiv.innerHTML = "";
+        noResults.classList.add("hidden");
+        loader.classList.add("hidden");
+        return;
+      }
+
+      debouncedSearch(query);
+    });
+
+    window.addEventListener(
+      "scroll",
+      throttle(() => {
+        if (window.scrollY > 200) {
+          backToTop.style.display = "block";
+        } else {
+          backToTop.style.display = "none";
+        }
+      }, 500)
+    );
+
+    backToTop.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  </script>
+</body>
+</html>
