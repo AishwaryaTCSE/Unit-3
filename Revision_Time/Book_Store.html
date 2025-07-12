@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>📚 Book Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+
+    .hidden { display: none; }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .book {
+      border-bottom: 1px solid #ddd;
+      padding: 10px 0;
+    }
+
+    .book.read {
+      background: #e6ffe6;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .loading {
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .logout {
+      background: red;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2 id="heading">📘 Login or Sign Up</h2>
+
+    <div id="auth-section">
+      <input type="email" id="email" placeholder="Email" />
+      <input type="password" id="password" placeholder="Password" />
+      <button onclick="signUp()">Sign Up</button>
+      <button onclick="login()">Login</button>
+    </div>
+
+    <div id="tracker-section" class="hidden">
+      <h3>📚 Book Tracker</h3>
+      <div id="userEmail"></div>
+      <form id="bookForm">
+        <input type="text" id="title" placeholder="Book Title" required />
+        <input type="text" id="author" placeholder="Author" required />
+        <button type="submit">Add Book</button>
+      </form>
+
+      <div class="loading" id="loading">Loading books...</div>
+      <div id="bookList"></div>
+
+      <button class="logout" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script>
+     const firebaseConfig = {
+    apiKey: "AIzaSyCtpw-fU0i7nzfr9QE1pFyndJnTG4B1-pU",
+    authDomain: "book-store-87997.firebaseapp.com",
+    projectId: "book-store-87997",
+    storageBucket: "book-store-87997.firebasestorage.app",
+    messagingSenderId: "466272414755",
+    appId: "1:466272414755:web:4284be9587d97d47cd9596",
+    measurementId: "G-ZKQG1ZLH50"
+  };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    let currentUser = null;
+
+    const authSection = document.getElementById("auth-section");
+    const trackerSection = document.getElementById("tracker-section");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const userEmail = document.getElementById("userEmail");
+    const bookList = document.getElementById("bookList");
+    const loading = document.getElementById("loading");
+
+    const mockAPI = "https://6829a2c86075e87073a708bd.mockapi.io/posts"; // Replace with your own API for real data
+
+    function signUp() {
+      const email = emailInput.value;
+      const password = passwordInput.value;
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(() => alert("User created! Please log in."))
+        .catch(err => alert(err.message));
+    }
+
+    function login() {
+      const email = emailInput.value;
+      const password = passwordInput.value;
+      auth.signInWithEmailAndPassword(email, password)
+        .then(res => {
+          currentUser = res.user;
+          showTracker();
+        })
+        .catch(err => alert(err.message));
+    }
+
+    function logout() {
+      auth.signOut().then(() => {
+        currentUser = null;
+        authSection.classList.remove("hidden");
+        trackerSection.classList.add("hidden");
+        document.getElementById("heading").innerText = "📘 Login or Sign Up";
+      });
+    }
+
+    function showTracker() {
+      authSection.classList.add("hidden");
+      trackerSection.classList.remove("hidden");
+      document.getElementById("heading").innerText = "📚 Welcome to Book Tracker!";
+      userEmail.innerText = `👤 Logged in as: ${currentUser.email}`;
+      fetchBooks();
+    }
+
+    document.getElementById("bookForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const title = document.getElementById("title").value;
+      const author = document.getElementById("author").value;
+
+      const book = { title, author, read: false, userId: currentUser.uid };
+
+      const res = await fetch(mockAPI, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(book)
+      });
+
+      const newBook = await res.json();
+      newBook.read = false;
+      displayBook(newBook);
+      document.getElementById("bookForm").reset();
+    });
+
+    async function fetchBooks() {
+      loading.style.display = "block";
+      const res = await fetch(mockAPI);
+      const books = await res.json();
+      loading.style.display = "none";
+
+      bookList.innerHTML = "";
+      books.slice(0, 10).forEach(book => {
+        book.read = false;
+        displayBook(book);
+      });
+    }
+
+    function displayBook(book) {
+      const div = document.createElement("div");
+      div.className = "book";
+      div.innerHTML = `
+        <strong>${book.title}</strong> by ${book.author || "Unknown"}
+        <div class="actions">
+          <button onclick="markRead(this)">📖 Mark as Read</button>
+          <button onclick="removeBook(this)">❌ Remove</button>
+        </div>
+      `;
+      bookList.appendChild(div);
+    }
+
+    function markRead(button) {
+      const bookDiv = button.closest(".book");
+      bookDiv.classList.toggle("read");
+    }
+
+    function removeBook(button) {
+      const bookDiv = button.closest(".book");
+      bookDiv.remove();
+    }
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        currentUser = user;
+        showTracker();
+      }
+    });
+  </script>
+</body>
+</html>
